@@ -21,23 +21,46 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     document.getElementById('openLog').addEventListener('click', () => {
-        // Logic to open daemon logs or folder
+        window.location.href = 'icedownloader://logs';
+    });
+
+    document.getElementById('status-card').addEventListener('click', () => {
+        const statusEl = document.getElementById('daemon-status');
+        if (statusEl.textContent === 'Не запущена') {
+            statusEl.textContent = 'Запуск...';
+            statusEl.style.color = '#ff9800';
+            window.location.href = 'icedownloader://start';
+            
+            let checks = 0;
+            const interval = setInterval(() => {
+                checkDaemonStatus();
+                checks++;
+                if (checks > 10) clearInterval(interval);
+            }, 1000);
+        }
     });
 });
 
 async function checkDaemonStatus() {
     const statusEl = document.getElementById('daemon-status');
+    const cardEl = document.getElementById('status-card');
     try {
         const res = await fetch(`${SERVER_URL}/status?url=ping`);
         if (res.ok) {
             statusEl.textContent = 'Активна';
             statusEl.style.color = '#4caf50';
+            cardEl.classList.remove('clickable');
+            cardEl.title = "";
         } else {
             throw new Error();
         }
     } catch (e) {
-        statusEl.textContent = 'Не запущена';
-        statusEl.style.color = '#f44336';
+        if (statusEl.textContent !== 'Запуск...') {
+            statusEl.textContent = 'Не запущена';
+            statusEl.style.color = '#f44336';
+            cardEl.classList.add('clickable');
+            cardEl.title = "Нажмите, чтобы запустить службу";
+        }
     }
 }
 

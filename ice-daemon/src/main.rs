@@ -82,7 +82,21 @@ enum StatusResponse {
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt::init();
+    let log_dir = PathBuf::from(std::env::var("LOCALAPPDATA").unwrap_or_default()).join("IceDownloader").join("logs");
+    std::fs::create_dir_all(&log_dir).ok();
+
+    let args: Vec<String> = std::env::args().collect();
+    if args.len() > 1 && args[1].starts_with("icedownloader://") {
+        let cmd = args[1].trim_start_matches("icedownloader://").trim_end_matches("/");
+        if cmd == "logs" {
+            let _ = std::process::Command::new("explorer").arg(&log_dir).spawn();
+            return;
+        }
+    }
+
+    let file_appender = tracing_appender::rolling::daily(&log_dir, "ice-daemon.log");
+    let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
+    tracing_subscriber::fmt().with_writer(non_blocking).init();
 
     let _ = tokio::spawn(async {
         if let Err(e) = ensure_ytdlp().await {
@@ -164,9 +178,16 @@ async fn main() {
         .with_state(state);
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3100));
-    info!("IceDaemon listening on {}", addr);
     
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    let listener = match tokio::net::TcpListener::bind(addr).await {
+        Ok(l) => l,
+        Err(_) => {
+            // Port 3100 is already in use, meaning the daemon is already active.
+            return;
+        }
+    };
+    
+    info!("IceDaemon listening on {}", addr);
     axum::serve(listener, app).await.unwrap();
 }
 

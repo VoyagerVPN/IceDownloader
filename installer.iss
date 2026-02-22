@@ -43,6 +43,9 @@ Name: "{group}\{cm:UninstallProgram,IceDownloader}"; Filename: "{uninstallexe}"
 
 [Registry]
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "IceDownloaderDaemon"; ValueData: """{app}\ice-daemon.exe"""; Tasks: startup; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Classes\icedownloader"; ValueType: string; ValueName: ""; ValueData: "URL:IceDownloader Protocol"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\icedownloader"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""
+Root: HKCU; Subkey: "Software\Classes\icedownloader\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\ice-daemon.exe"" ""%1"""
 
 [Run]
 Filename: "{app}\ice-daemon.exe"; Description: "Запустить IceDownloader Daemon"; Flags: nowait postinstall skipifsilent; WorkingDir: "{app}"

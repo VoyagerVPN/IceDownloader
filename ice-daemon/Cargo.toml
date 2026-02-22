@@ -23,3 +23,4 @@ lazy_static = "1.4"
 tempfile = "3.10"
 image = "0.24" # For loading tray icon
 windows-sys = { version = "0.61.2", features = ["Win32_UI_WindowsAndMessaging", "Win32_Foundation", "Win32_System_Threading"] }
+tracing-appender = "0.2.4"
