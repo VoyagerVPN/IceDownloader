@@ -25,6 +25,7 @@ Compression=lzma2
 SolidCompression=yes
 OutputDir=userdocs:Inno Setup Examples Output
 OutputBaseFilename=IceDownloaderSetup
+SetupIconFile=d:\Pet\yt-dlp-gui\IceDownloader.ico
 PrivilegesRequired=admin
 WizardStyle=modern
 
@@ -281,5 +282,6 @@ begin
     end;
   end;
 end;
+
 
 
