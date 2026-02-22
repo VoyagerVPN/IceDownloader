@@ -23,7 +23,7 @@ use tray_icon::{
     TrayIconBuilder, TrayIcon,
 };
 use crossbeam_channel::{unbounded, Sender};
-use windows_sys::Win32::UI::WindowsAndMessaging::{PeekMessageW, TranslateMessage, DispatchMessageW, MSG, PM_REMOVE};
+use windows_sys::Win32::UI::WindowsAndMessaging::{MsgWaitForMultipleObjects, PeekMessageW, TranslateMessage, DispatchMessageW, MSG, PM_REMOVE, QS_ALLINPUT};
 use windows_sys::Win32::Foundation::HWND;
 
 // Simplified SSE types for Axum 0.7
@@ -136,7 +136,10 @@ async fn main() {
                 }
             }
 
-            std::thread::sleep(Duration::from_millis(10));
+            // Wait until a message arrives or 50ms elapses, non-blocking the UI thread
+            unsafe {
+                MsgWaitForMultipleObjects(0, std::ptr::null(), 0, 50, QS_ALLINPUT);
+            }
         }
     });
 

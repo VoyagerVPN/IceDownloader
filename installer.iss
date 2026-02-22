@@ -157,33 +157,9 @@ var
 begin
   if CurStep <> ssPostInstall then Exit;
 
-  if BrowserPage.Values[0] then
-  begin
-    ShellExec('open', 'chrome.exe', 'chrome://extensions', '', SW_SHOWNORMAL, ewNoWait, ErrorCode);
-  end;
 
-  if BrowserPage.Values[1] then
-  begin
-    ShellExec('open', 'msedge.exe', 'edge://extensions', '', SW_SHOWNORMAL, ewNoWait, ErrorCode);
-  end;
-
-  if BrowserPage.Values[2] then
-  begin
-    ShellExec('open', 'brave.exe', 'brave://extensions', '', SW_SHOWNORMAL, ewNoWait, ErrorCode);
-  end;
-
-  if BrowserPage.Values[3] then
-  begin
-    ShellExec('open', 'opera.exe', 'opera://extensions', '', SW_SHOWNORMAL, ewNoWait, ErrorCode);
-  end;
-
-  if BrowserPage.Values[4] then
-  begin
-    ShellExec('open', 'browser.exe', 'browser://extensions', '', SW_SHOWNORMAL, ewNoWait, ErrorCode);
-  end;
-
-  // Открываем папку с расширением, чтобы юзер мог перетащить ее в браузер
-  ShellExec('open', ExpandConstant('{app}\extension'), '', '', SW_SHOWNORMAL, ewNoWait, ErrorCode);
+  // Открываем папку с программой, выделяя папку extension, чтобы юзер мог сразу перетащить ее в браузер
+  ShellExec('open', 'explorer.exe', '/select,"' + ExpandConstant('{app}\extension') + '"', '', SW_SHOWNORMAL, ewNoWait, ErrorCode);
 
   WarnMsg := '';
   if FirefoxInstalled then
