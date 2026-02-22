@@ -1,0 +1,32 @@
+# Rust
+/ice-daemon/target
+/ice-daemon/Cargo.lock
+
+# Build Artefacts
+/*.crx
+/*.crx.pem
+/key.pem
+/IceDownloader.crx
+/installer.iss.bak
+/update.xml
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+.chatledger/
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# Output
+/Inno Setup Examples Output/
+/Output/
+
+#Source
+yt-dlp/
+yt-savefromnet-fix/
+my-app/
+.temp/

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>IceDownloader Settings</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f0f0f;
+            --surface: #1f1f1f;
+            --primary: #3ea6ff;
+            --text: #ffffff;
+            --text-secondary: #aaaaaa;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+        body {
+            width: 320px;
+            margin: 0;
+            padding: 16px;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .header img {
+            width: 32px;
+            height: 32px;
+            margin-right: 12px;
+            border-radius: 6px;
+        }
+        .header h1 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+        }
+        .status-card {
+            background-color: var(--surface);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border);
+        }
+        .status-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .status-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .status-label .icon {
+            color: var(--primary);
+        }
+        .status-text {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .settings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .setting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+        }
+        .setting-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .setting-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .setting-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        /* Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #333;
+            transition: .3s;
+            border-radius: 20px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: var(--primary);
+        }
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        .footer {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .btn-link {
+            color: var(--primary);
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .btn-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="icon.png" alt="IceDownloader">
+        <h1>IceDownloader</h1>
+    </div>
+
+    <div class="status-card">
+        <div class="status-item">
+            <div class="status-label">
+                <span class="icon material-symbols-rounded">dns</span>
+                <span class="status-text">Служба IceDaemon</span>
+            </div>
+            <div id="daemon-status" style="font-size: 12px; color: #4caf50;">Активна</div>
+        </div>
+    </div>
+
+    <div class="settings-list">
+        <div class="setting-item">
+            <div class="setting-info">
+                <span class="setting-name">Запуск с Windows</span>
+                <span class="setting-desc">Автозапуск при включении ПК</span>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="autoStart" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <span class="setting-name">Иконка в трее</span>
+                <span class="setting-desc">Показывать значок в панели задач</span>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="showTray" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <span class="setting-name">Авто-обновление yt-dlp</span>
+                <span class="setting-desc">Проверять версии при запуске</span>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="autoUpdate" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <div class="footer">
+        <span>Версия 1.0.0</span>
+        <span class="btn-link" id="openLog">Логи</span>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

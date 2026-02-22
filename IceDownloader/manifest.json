@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "IceDownloader",
+  "author": "Ranazy",
+  "description": "YouTube Downloader with yt-dlp integration v1.0",
+  "version": "1.0",
+  "icons": {
+    "128": "icon.png"
+  },
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "*://*.youtube.com/*",
+    "http://127.0.0.1:3100/*",
+    "http://localhost:3100/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.youtube.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
