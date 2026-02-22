@@ -50,132 +50,68 @@ Filename: "{app}\ice-daemon.exe"; Description: "Запустить IceDownloader
 [UninstallRun]
 Filename: "taskkill.exe"; Parameters: "/F /IM ice-daemon.exe"; Flags: runhidden
 
+[UninstallDelete]
+Type: files; Name: "{app}\yt-dlp.exe"
+Type: files; Name: "{app}\update.xml"
+Type: files; Name: "{app}\extension.crx"
+Type: filesandordirs; Name: "{app}\extension"
+Type: dirifempty; Name: "{app}"
+
 [Code]
 
-
-var
-  BrowserPage: TInputOptionWizardPage;
-
-{ ── Browser detection ────────────────────────────────────── }
-function AppPathExists(const ExeName: string): Boolean;
-begin
-  Result :=
-    RegKeyExists(HKCU, 'SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\' + ExeName) or
-    RegKeyExists(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\' + ExeName);
-end;
-
-function ChromeInstalled: Boolean;
-begin
-  Result := AppPathExists('chrome.exe') or
-            RegKeyExists(HKLM, 'SOFTWARE\Google\Chrome') or
-            RegKeyExists(HKCU, 'SOFTWARE\Google\Chrome');
-end;
-
-function EdgeInstalled: Boolean;
-begin
-  Result := AppPathExists('msedge.exe') or
-            RegKeyExists(HKLM, 'SOFTWARE\Microsoft\EdgeUpdate');
-end;
-
-function BraveInstalled: Boolean;
-begin
-  Result := AppPathExists('brave.exe') or
-            RegKeyExists(HKCU, 'SOFTWARE\BraveSoftware\Brave-Browser');
-end;
-
-function OperaInstalled: Boolean;
-begin
-  Result := AppPathExists('opera.exe') or
-            RegKeyExists(HKCU, 'SOFTWARE\Opera Software') or
-            RegKeyExists(HKLM, 'SOFTWARE\Opera Software');
-end;
-
-function YandexInstalled: Boolean;
-begin
-  Result := AppPathExists('browser.exe') or
-            RegKeyExists(HKCU, 'SOFTWARE\YandexBrowser') or
-            DirExists(ExpandConstant('{localappdata}\Yandex\YandexBrowser'));
-end;
-
-function FirefoxInstalled: Boolean;
-begin
-  Result := AppPathExists('firefox.exe') or
-            RegKeyExists(HKLM, 'SOFTWARE\Mozilla\Mozilla Firefox');
-end;
-
-function DuckDuckGoInstalled: Boolean;
-begin
-  Result := DirExists(ExpandConstant('{localappdata}\Programs\DuckDuckGo'));
-end;
-
-{ ── Setup Wizard Hooks ───────────────────────────────────── }
-procedure InitializeWizard;
-begin
-  BrowserPage := CreateInputOptionPage(wpSelectTasks, 'Выбор браузеров', 'В какие браузеры установить расширение?',
-    'Отметьте браузеры, в которых вы хотите использовать IceDownloader. По умолчанию отмечены те, что уже найдены в системе.',
-    False, False);
-  
-  BrowserPage.Add('Google Chrome');
-  BrowserPage.Add('Microsoft Edge');
-  BrowserPage.Add('Brave Browser');
-  BrowserPage.Add('Opera');
-  BrowserPage.Add('Yandex Browser');
-
-  if ChromeInstalled then BrowserPage.Values[0] := True;
-  if EdgeInstalled then BrowserPage.Values[1] := True;
-  if BraveInstalled then BrowserPage.Values[2] := True;
-  if OperaInstalled then BrowserPage.Values[3] := True;
-  if YandexInstalled then BrowserPage.Values[4] := True;
-end;
-
-function NextButtonClick(CurPageID: Integer): Boolean;
-var
-  I: Integer;
-begin
-  Result := True;
-  if CurPageID = BrowserPage.ID then
-  begin
-    Result := False;
-    for I := 0 to 4 do
-    begin
-      if BrowserPage.Values[I] then
-      begin
-        Result := True;
-        Break;
-      end;
-    end;
-    if not Result then
-      MsgBox('Пожалуйста, выберите хотя бы один браузер для установки расширения.', mbError, MB_OK);
-  end;
-end;
-
-{ ── Post-install hook ────────────────────────────────────── }
 procedure CurStepChanged(CurStep: TSetupStep);
 var
-  WarnMsg: string;
   ErrorCode: Integer;
 begin
   if CurStep <> ssPostInstall then Exit;
 
-
-  // Открываем папку с программой, выделяя папку extension, чтобы юзер мог сразу перетащить ее в браузер
+  // Открываем папку с программой, выделяя папку extension, чтобы юзер мог сразу перетащить ее
   ShellExec('open', 'explorer.exe', '/select,"' + ExpandConstant('{app}\extension') + '"', '', SW_SHOWNORMAL, ewNoWait, ErrorCode);
-
-  WarnMsg := '';
-  if FirefoxInstalled then
-    WarnMsg := WarnMsg + #13#10 + '  ! Firefox — не поддерживается (только Chromium)';
-  if DuckDuckGoInstalled then
-    WarnMsg := WarnMsg + #13#10 + '  ! DuckDuckGo Browser — не поддерживается (только Chromium)';
 
   MsgBox(
     'IceDownloader успешно установлен!' + #13#10 + #13#10 +
-    'Чтобы установить расширение в браузер:' + #13#10 + #13#10 +
-    '1. В открывшемся окне браузера включите "Режим разработчика" ("Developer mode" справа вверху).' + #13#10 +
-    '2. Перетащите папку "extension" из открывшегося окна прямо в браузер.' + #13#10 + #13#10 +
-    WarnMsg,
+    'Остался последний шаг — добавить расширение в ваш браузер (Chrome, Yandex, Edge, Opera или Brave):' + #13#10 + #13#10 +
+    '1. Откройте страницу расширений в браузере (например: chrome://extensions).' + #13#10 +
+    '2. Включите "Режим разработчика" ("Developer mode" справа вверху).' + #13#10 +
+    '3. Перетащите выделенную папку "extension" из открывшегося окна прямо на страницу расширений в браузере.',
     mbInformation, MB_OK
   );
 
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var
+  I: Integer;
+  ValueName, ExistingVal: string;
+  PolicyPaths: TArrayOfString;
+  P: Integer;
+begin
+  if CurUninstallStep <> usPostUninstall then Exit;
+
+  SetArrayLength(PolicyPaths, 5);
+  PolicyPaths[0] := 'SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist';
+  PolicyPaths[1] := 'SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist';
+  PolicyPaths[2] := 'SOFTWARE\Policies\BraveSoftware\Brave\ExtensionInstallForcelist';
+  PolicyPaths[3] := 'SOFTWARE\Policies\Opera Software\Opera stable\ExtensionInstallForcelist';
+  PolicyPaths[4] := 'SOFTWARE\Policies\Yandex\YandexBrowser\ExtensionInstallForcelist';
+
+  for P := 0 to High(PolicyPaths) do
+  begin
+    for I := 1 to 100 do
+    begin
+      ValueName := IntToStr(I);
+      if RegQueryStringValue(HKLM, PolicyPaths[P], ValueName, ExistingVal) then
+      begin
+        if Pos('afjgggcjlkphobpgpipadjbpnjaaneab', ExistingVal) = 1 then
+        begin
+          RegDeleteValue(HKLM, PolicyPaths[P], ValueName);
+          Break;
+        end;
+      end
+      else
+        Break;
+    end;
+  end;
 end;
 
 
