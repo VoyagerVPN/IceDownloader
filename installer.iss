@@ -25,7 +25,7 @@ Compression=lzma2
 SolidCompression=yes
 OutputDir=userdocs:Inno Setup Examples Output
 OutputBaseFilename=IceDownloaderSetup
-SetupIconFile=d:\Pet\yt-dlp-gui\IceDownloader.ico
+SetupIconFile=IceDownloader.ico
 PrivilegesRequired=admin
 WizardStyle=modern
 
@@ -55,6 +55,9 @@ Filename: "taskkill.exe"; Parameters: "/F /IM ice-daemon.exe"; Flags: runhidden
 
 const
   ExtId = '{#EXTENSION_ID}';
+
+var
+  BrowserPage: TInputOptionWizardPage;
 
 { ── Path helper: backslash to forward slash ──────────────── }
 function ToForwardSlashes(const S: string): string;
@@ -161,6 +164,47 @@ begin
   SaveStringToFile(XmlPath, XmlContent, False);
 end;
 
+{ ── Setup Wizard Hooks ───────────────────────────────────── }
+procedure InitializeWizard;
+begin
+  BrowserPage := CreateInputOptionPage(wpSelectTasks, 'Выбор браузеров', 'В какие браузеры установить расширение?',
+    'Отметьте браузеры, в которых вы хотите использовать IceDownloader. По умолчанию отмечены те, что уже найдены в системе.',
+    False, False);
+  
+  BrowserPage.Add('Google Chrome');
+  BrowserPage.Add('Microsoft Edge');
+  BrowserPage.Add('Brave Browser');
+  BrowserPage.Add('Opera');
+  BrowserPage.Add('Yandex Browser');
+
+  if ChromeInstalled then BrowserPage.Values[0] := True;
+  if EdgeInstalled then BrowserPage.Values[1] := True;
+  if BraveInstalled then BrowserPage.Values[2] := True;
+  if OperaInstalled then BrowserPage.Values[3] := True;
+  if YandexInstalled then BrowserPage.Values[4] := True;
+end;
+
+function NextButtonClick(CurPageID: Integer): Boolean;
+var
+  I: Integer;
+begin
+  Result := True;
+  if CurPageID = BrowserPage.ID then
+  begin
+    Result := False;
+    for I := 0 to 4 do
+    begin
+      if BrowserPage.Values[I] then
+      begin
+        Result := True;
+        Break;
+      end;
+    end;
+    if not Result then
+      MsgBox('Пожалуйста, выберите хотя бы один браузер для установки расширения.', mbError, MB_OK);
+  end;
+end;
+
 { ── Post-install hook ────────────────────────────────────── }
 procedure CurStepChanged(CurStep: TSetupStep);
 var
@@ -180,35 +224,35 @@ begin
   InstalledIn := '';
   HasChromium := False;
 
-  if ChromeInstalled then
+  if BrowserPage.Values[0] then
   begin
     WriteExtensionPolicy('SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist', ExtId, UpdateUrl);
     InstalledIn := InstalledIn + #13#10 + '  + Google Chrome';
     HasChromium := True;
   end;
 
-  if EdgeInstalled then
+  if BrowserPage.Values[1] then
   begin
     WriteExtensionPolicy('SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist', ExtId, UpdateUrl);
     InstalledIn := InstalledIn + #13#10 + '  + Microsoft Edge';
     HasChromium := True;
   end;
 
-  if BraveInstalled then
+  if BrowserPage.Values[2] then
   begin
     WriteExtensionPolicy('SOFTWARE\Policies\BraveSoftware\Brave\ExtensionInstallForcelist', ExtId, UpdateUrl);
     InstalledIn := InstalledIn + #13#10 + '  + Brave Browser';
     HasChromium := True;
   end;
 
-  if OperaInstalled then
+  if BrowserPage.Values[3] then
   begin
     WriteExtensionPolicy('SOFTWARE\Policies\Opera Software\Opera stable\ExtensionInstallForcelist', ExtId, UpdateUrl);
     InstalledIn := InstalledIn + #13#10 + '  + Opera';
     HasChromium := True;
   end;
 
-  if YandexInstalled then
+  if BrowserPage.Values[4] then
   begin
     WriteExtensionPolicy('SOFTWARE\Policies\Yandex\YandexBrowser\ExtensionInstallForcelist', ExtId, UpdateUrl);
     InstalledIn := InstalledIn + #13#10 + '  + Yandex Browser';
@@ -282,6 +326,8 @@ begin
     end;
   end;
 end;
+
+
 
 
 

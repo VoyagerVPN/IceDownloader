@@ -117,8 +117,11 @@ async fn main() {
             if let Ok(event) = menu_channel.try_recv() {
                 if event.id == "quit" {
                     std::process::exit(0);
-                } else if event.id == "open_downloads" {
-                    let _ = open_folder();
+                } else if event.id == "restart" {
+                    if let Ok(exe) = std::env::current_exe() {
+                        let _ = std::process::Command::new(exe).spawn();
+                        std::process::exit(0);
+                    }
                 }
             }
 
@@ -155,9 +158,9 @@ async fn main() {
 
 fn create_tray() -> Option<TrayIcon> {
     let tray_menu = Menu::with_items(&[
-        &MenuItem::with_id("open_downloads", "Открыть папку загрузок", true, None),
+        &MenuItem::with_id("restart", "Перезапустить", true, None),
         &PredefinedMenuItem::separator(),
-        &MenuItem::with_id("quit", "Выход", true, None),
+        &MenuItem::with_id("quit", "Закрыть", true, None),
     ]).unwrap();
 
     let icon = load_icon();
