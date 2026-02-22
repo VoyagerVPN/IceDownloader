@@ -3,7 +3,7 @@
 ; Run scripts\build-installer.ps1 to rebuild.
 ; ============================================================
 
-#define EXTENSION_ID "afjgggcjlkphobpgpipadjbpnjaaneab"
+
 
 [Setup]
 AppName=IceDownloader
@@ -35,7 +35,6 @@ Name: "startup"; Description: "Запускать при старте Windows"; 
 [Files]
 Source: "d:\Pet\yt-dlp-gui\ice-daemon\target\release\ice-daemon.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "d:\Pet\yt-dlp-gui\IceDownloader.ico"; DestDir: "{app}"; Flags: ignoreversion
-Source: "d:\Pet\yt-dlp-gui\IceDownloader.crx"; DestDir: "{app}"; DestName: "extension.crx"; Flags: ignoreversion
 Source: "d:\Pet\yt-dlp-gui\IceDownloader\*"; DestDir: "{app}\extension"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
@@ -53,23 +52,9 @@ Filename: "taskkill.exe"; Parameters: "/F /IM ice-daemon.exe"; Flags: runhidden
 
 [Code]
 
-const
-  ExtId = '{#EXTENSION_ID}';
 
 var
   BrowserPage: TInputOptionWizardPage;
-
-{ ── Path helper: backslash to forward slash ──────────────── }
-function ToForwardSlashes(const S: string): string;
-var
-  i: Integer;
-  R: string;
-begin
-  R := S;
-  for i := 1 to Length(R) do
-    if R[i] = '\' then R[i] := '/';
-  Result := R;
-end;
 
 { ── Browser detection ────────────────────────────────────── }
 function AppPathExists(const ExeName: string): Boolean;
@@ -123,47 +108,6 @@ begin
   Result := DirExists(ExpandConstant('{localappdata}\Programs\DuckDuckGo'));
 end;
 
-{ ── ExtensionInstallForcelist registry helper ─────────────── }
-procedure WriteExtensionPolicy(const PolicySubkey: string; const ExtId: string; const UpdateUrl: string);
-var
-  I: Integer;
-  ValueName: string;
-  ExistingVal: string;
-begin
-  for I := 1 to 100 do
-  begin
-    ValueName := IntToStr(I);
-    if not RegQueryStringValue(HKLM, PolicySubkey, ValueName, ExistingVal) then
-    begin
-      RegWriteStringValue(HKLM, PolicySubkey, ValueName, ExtId + ';' + UpdateUrl);
-      Exit;
-    end;
-    if Pos(ExtId, ExistingVal) = 1 then
-    begin
-      RegWriteStringValue(HKLM, PolicySubkey, ValueName, ExtId + ';' + UpdateUrl);
-      Exit;
-    end;
-  end;
-end;
-
-{ ── Create update.xml manifest ───────────────────────────── }
-procedure WriteUpdateXml(const CrxPath: string; const XmlPath: string; const ExtId: string);
-var
-  CrxUrl, XmlContent: string;
-begin
-  CrxUrl := 'file:///' + ToForwardSlashes(CrxPath);
-  XmlContent :=
-    '<?xml version=''1.0'' encoding=''UTF-8''?>' + #13#10 +
-    '<gupdate xmlns=''http://www.google.com/update2/response'' protocol=''2.0''>' + #13#10 +
-    '  <app appid=''' + ExtId + '''>' + #13#10 +
-    '    <updatecheck' + #13#10 +
-    '      codebase=''' + CrxUrl + '''' + #13#10 +
-    '      version=''1.0.0'' />' + #13#10 +
-    '  </app>' + #13#10 +
-    '</gupdate>';
-  SaveStringToFile(XmlPath, XmlContent, False);
-end;
-
 { ── Setup Wizard Hooks ───────────────────────────────────── }
 procedure InitializeWizard;
 begin
@@ -208,56 +152,38 @@ end;
 { ── Post-install hook ────────────────────────────────────── }
 procedure CurStepChanged(CurStep: TSetupStep);
 var
-  CrxPath, XmlPath, UpdateUrl: string;
-  InstalledIn, WarnMsg: string;
-  HasChromium: Boolean;
+  WarnMsg: string;
   ErrorCode: Integer;
 begin
   if CurStep <> ssPostInstall then Exit;
 
-  CrxPath   := ExpandConstant('{app}\extension.crx');
-  XmlPath   := ExpandConstant('{app}\update.xml');
-  UpdateUrl := 'file:///' + ToForwardSlashes(XmlPath);
-
-  WriteUpdateXml(CrxPath, XmlPath, ExtId);
-
-  InstalledIn := '';
-  HasChromium := False;
-
   if BrowserPage.Values[0] then
   begin
-    WriteExtensionPolicy('SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist', ExtId, UpdateUrl);
-    InstalledIn := InstalledIn + #13#10 + '  + Google Chrome';
-    HasChromium := True;
+    ShellExec('open', 'chrome.exe', 'chrome://extensions', '', SW_SHOWNORMAL, ewNoWait, ErrorCode);
   end;
 
   if BrowserPage.Values[1] then
   begin
-    WriteExtensionPolicy('SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist', ExtId, UpdateUrl);
-    InstalledIn := InstalledIn + #13#10 + '  + Microsoft Edge';
-    HasChromium := True;
+    ShellExec('open', 'msedge.exe', 'edge://extensions', '', SW_SHOWNORMAL, ewNoWait, ErrorCode);
   end;
 
   if BrowserPage.Values[2] then
   begin
-    WriteExtensionPolicy('SOFTWARE\Policies\BraveSoftware\Brave\ExtensionInstallForcelist', ExtId, UpdateUrl);
-    InstalledIn := InstalledIn + #13#10 + '  + Brave Browser';
-    HasChromium := True;
+    ShellExec('open', 'brave.exe', 'brave://extensions', '', SW_SHOWNORMAL, ewNoWait, ErrorCode);
   end;
 
   if BrowserPage.Values[3] then
   begin
-    WriteExtensionPolicy('SOFTWARE\Policies\Opera Software\Opera stable\ExtensionInstallForcelist', ExtId, UpdateUrl);
-    InstalledIn := InstalledIn + #13#10 + '  + Opera';
-    HasChromium := True;
+    ShellExec('open', 'opera.exe', 'opera://extensions', '', SW_SHOWNORMAL, ewNoWait, ErrorCode);
   end;
 
   if BrowserPage.Values[4] then
   begin
-    WriteExtensionPolicy('SOFTWARE\Policies\Yandex\YandexBrowser\ExtensionInstallForcelist', ExtId, UpdateUrl);
-    InstalledIn := InstalledIn + #13#10 + '  + Yandex Browser';
-    HasChromium := True;
+    ShellExec('open', 'browser.exe', 'browser://extensions', '', SW_SHOWNORMAL, ewNoWait, ErrorCode);
   end;
+
+  // Открываем папку с расширением, чтобы юзер мог перетащить ее в браузер
+  ShellExec('open', ExpandConstant('{app}\extension'), '', '', SW_SHOWNORMAL, ewNoWait, ErrorCode);
 
   WarnMsg := '';
   if FirefoxInstalled then
@@ -265,67 +191,17 @@ begin
   if DuckDuckGoInstalled then
     WarnMsg := WarnMsg + #13#10 + '  ! DuckDuckGo Browser — не поддерживается (только Chromium)';
 
-  if HasChromium then
-  begin
-    MsgBox(
-      'IceDownloader установлен!' + #13#10 + #13#10 +
-      'Расширение будет автоматически добавлено в:' + InstalledIn + #13#10 + #13#10 +
-      'Перезапустите браузер — расширение установится само.' +
-      WarnMsg,
-      mbInformation, MB_OK
-    );
-  end
-  else
-  begin
-    MsgBox(
-      'IceDownloader установлен, но совместимый браузер не найден.' + #13#10 + #13#10 +
-      'Расширение работает только в Chromium-браузерах:' + #13#10 +
-      '  Chrome, Edge, Brave, Opera, Yandex Browser' + #13#10 + #13#10 +
-      'После установки браузера откройте раздел расширений,' + #13#10 +
-      'включите режим разработчика и загрузите папку:' + #13#10 +
-      ExpandConstant('{app}\extension') +
-      WarnMsg,
-      mbInformation, MB_OK
-    );
-    ShellExec('open', ExpandConstant('{app}\extension'), '', '', SW_SHOWNORMAL, ewNoWait, ErrorCode);
-  end;
+  MsgBox(
+    'IceDownloader успешно установлен!' + #13#10 + #13#10 +
+    'Чтобы установить расширение в браузер:' + #13#10 + #13#10 +
+    '1. В открывшемся окне браузера включите "Режим разработчика" ("Developer mode" справа вверху).' + #13#10 +
+    '2. Перетащите папку "extension" из открывшегося окна прямо в браузер.' + #13#10 + #13#10 +
+    WarnMsg,
+    mbInformation, MB_OK
+  );
+
 end;
 
-{ ── Cleanup on uninstall ─────────────────────────────────── }
-procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
-var
-  I: Integer;
-  ValueName, ExistingVal: string;
-  PolicyPaths: TArrayOfString;
-  P: Integer;
-begin
-  if CurUninstallStep <> usPostUninstall then Exit;
-
-  SetArrayLength(PolicyPaths, 5);
-  PolicyPaths[0] := 'SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist';
-  PolicyPaths[1] := 'SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist';
-  PolicyPaths[2] := 'SOFTWARE\Policies\BraveSoftware\Brave\ExtensionInstallForcelist';
-  PolicyPaths[3] := 'SOFTWARE\Policies\Opera Software\Opera stable\ExtensionInstallForcelist';
-  PolicyPaths[4] := 'SOFTWARE\Policies\Yandex\YandexBrowser\ExtensionInstallForcelist';
-
-  for P := 0 to High(PolicyPaths) do
-  begin
-    for I := 1 to 100 do
-    begin
-      ValueName := IntToStr(I);
-      if RegQueryStringValue(HKLM, PolicyPaths[P], ValueName, ExistingVal) then
-      begin
-        if Pos(ExtId, ExistingVal) = 1 then
-        begin
-          RegDeleteValue(HKLM, PolicyPaths[P], ValueName);
-          Break;
-        end;
-      end
-      else
-        Break;
-    end;
-  end;
-end;
 
 
 

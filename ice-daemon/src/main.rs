@@ -23,6 +23,8 @@ use tray_icon::{
     TrayIconBuilder, TrayIcon,
 };
 use crossbeam_channel::{unbounded, Sender};
+use windows_sys::Win32::UI::WindowsAndMessaging::{PeekMessageW, TranslateMessage, DispatchMessageW, MSG, PM_REMOVE};
+use windows_sys::Win32::Foundation::HWND;
 
 // Simplified SSE types for Axum 0.7
 mod ax_sse {
@@ -99,6 +101,15 @@ async fn main() {
         tray_icon = create_tray();
 
         loop {
+            // Process Windows messages required for tray icon to be responsive
+            let mut msg: MSG = unsafe { std::mem::zeroed() };
+            while unsafe { PeekMessageW(&mut msg, 0 as HWND, 0, 0, PM_REMOVE) } != 0 {
+                unsafe {
+                    TranslateMessage(&msg);
+                    DispatchMessageW(&msg);
+                }
+            }
+
             // Handle Commands
             while let Ok(cmd) = tray_rx.try_recv() {
                 match cmd {
@@ -125,7 +136,7 @@ async fn main() {
                 }
             }
 
-            std::thread::sleep(Duration::from_millis(100));
+            std::thread::sleep(Duration::from_millis(10));
         }
     });
 
